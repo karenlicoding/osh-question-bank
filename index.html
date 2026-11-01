@@ -7,6 +7,7 @@
 <style>
 @page { size: A4; margin: 14mm 13mm 13mm; }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html { background: #ececec; }
 body { margin: 0 auto; max-width: 210mm; min-height: 297mm; padding: 17mm 15mm; background: #fff; color: #151515; font-family: "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", Arial, sans-serif; font-size: 10.3pt; line-height: 1.58; }
 h1, h2, h3, h4, p { margin-top: 0; }
@@ -58,6 +59,23 @@ body[data-mode="practice"] .app-toolbar, body[data-mode="wrong"] .app-toolbar, b
 .practice-controls select, .practice-controls input, .manager-search input, .manager-search select, .editor-grid input, .editor-grid select, .editor-grid textarea { width: 100%; border: 1px solid #aebcc7; border-radius: 5px; padding: 7px 8px; font: inherit; color: #18242d; background: #fff; }
 .practice-controls select { min-width: 230px; }
 .practice-controls input { width: 100px; }
+.practice-builder { flex: 1 1 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.practice-group { min-width: 0; margin: 0; padding: 14px; border: 1px solid #b9c9d5; border-radius: 9px; background: #f8fbfd; }
+.practice-group legend { padding: 0 7px; color: #173f5e; font-size: 16px; font-weight: 700; }
+.practice-group-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.practice-group-head p { font-size: 12px; }
+.practice-group-actions { display: flex; flex: 0 0 auto; gap: 5px; }
+.practice-group-actions button { border: 1px solid #7895aa; border-radius: 5px; padding: 4px 7px; background: #fff; color: #31546d; font: inherit; font-size: 12px; cursor: pointer; }
+.practice-category-list { display: grid; gap: 6px; }
+.practice-category-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 8px; padding: 7px 8px; border: 1px solid #d9e2e8; border-radius: 6px; background: #fff; }
+.practice-category-row > input[type="checkbox"] { width: 18px; height: 18px; margin: 0; }
+.practice-category-name { min-width: 0; color: #263a48; cursor: pointer; }
+.practice-available { color: #687985; font-size: 12px; white-space: nowrap; }
+.practice-count-field { display: flex !important; grid-template-columns: auto 68px !important; align-items: center; gap: 5px !important; white-space: nowrap; }
+.practice-count-field input { width: 68px !important; padding: 5px 6px !important; }
+.practice-count-field input:disabled { background: #edf1f4; color: #84919a; }
+.practice-selection-total { flex: 1 1 auto; align-self: center; margin: 0; color: #285b31; font-size: 13px; font-weight: 700; }
+.practice-controls > button#start-practice { align-self: center; }
 .practice-summary { margin: 16px 0; padding: 10px 12px; border-radius: 6px; background: #eef7ef; color: #24532d; }
 .practice-question { margin: 16px 0; padding: 18px; border: 1px solid #d5dde3; border-radius: 10px; background: #fff; }
 .practice-question h2 { margin: 0 0 8px; font-size: 18px; line-height: 1.45; }
@@ -88,7 +106,7 @@ body[data-mode="practice"] .app-toolbar, body[data-mode="wrong"] .app-toolbar, b
 .backup-actions { margin-top: 12px; }
 .small-note { margin-top: 10px; color: #566671; font-size: 12px; }
 .toast { position: fixed; right: 22px; bottom: 22px; z-index: 10; padding: 10px 14px; border-radius: 7px; background: #163c5a; color: #fff; box-shadow: 0 3px 12px rgba(0,0,0,.2); }
-@media (max-width: 760px) { body[data-mode="practice"], body[data-mode="wrong"], body[data-mode="manage"] { padding: 12px; } .app-toolbar { display: block !important; } .app-actions { justify-content: flex-start; margin-top: 10px; } .manager-layout { grid-template-columns: 1fr; } .editor-options { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { body[data-mode="practice"], body[data-mode="wrong"], body[data-mode="manage"] { padding: 12px; } .app-toolbar { display: block !important; } .app-actions { justify-content: flex-start; margin-top: 10px; } .practice-builder { grid-template-columns: 1fr; } .practice-category-row { grid-template-columns: auto minmax(0, 1fr) auto; } .practice-available { display: none; } .practice-group-head { align-items: flex-start; } .manager-layout { grid-template-columns: 1fr; } .editor-options { grid-template-columns: 1fr; } }
 @media print { html { background: #fff; } body { max-width: none; min-height: 0; padding: 0; background: #fff; } .app-toolbar, #practice-app, .print-actions { display: none !important; } #print-bank { display: block !important; } .index { min-height: 0; break-after: page; page-break-after: always; } .index-list li { padding: 1.3mm 0; } a { color: #0b63b6; } }
 </style>
 </head>
@@ -2262,6 +2280,7 @@ const QUESTION_BANK = [{"id":"10","category":"A｜職業安全衛生法","questi
   let sessionAnswers = {};
   let sessionTitle = '隨機題庫練習';
   let managerSelectedId = null;
+  let practiceBuilderReady = false;
 
   function byId(id) { return document.getElementById(id); }
   function readStorage(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch (error) { return fallback; } }
@@ -2297,12 +2316,70 @@ const QUESTION_BANK = [{"id":"10","category":"A｜職業安全衛生法","questi
     }
     return result;
   }
+  function practiceCategories(prefix) {
+    return allCategories().filter(function (category) { return category.indexOf(prefix + '｜') === 0; }).map(function (category) {
+      return { name: category, available: allQuestions().filter(function (question) { return question.category === category; }).length };
+    });
+  }
+  function practiceGroupMarkup(prefix, title) {
+    const rows = practiceCategories(prefix).map(function (item, index) {
+      const checkboxId = 'practice-category-' + prefix + '-' + index;
+      const countId = 'practice-category-count-' + prefix + '-' + index;
+      const shortName = item.name.slice(2);
+      return '<div class="practice-category-row"><input type="checkbox" id="' + checkboxId + '" class="practice-category-check" data-category="' + escapeHtml(item.name) + '" data-count-id="' + countId + '"><label class="practice-category-name" for="' + checkboxId + '">' + escapeHtml(shortName) + '</label><span class="practice-available">共 ' + item.available + ' 題</span><label class="practice-count-field" for="' + countId + '">抽題<input type="number" id="' + countId + '" class="practice-category-count" min="1" max="' + item.available + '" value="' + Math.min(5, item.available) + '" disabled aria-label="' + escapeHtml(shortName) + '抽題數"></label></div>';
+    }).join('');
+    return '<fieldset class="practice-group" data-practice-prefix="' + prefix + '"><legend>' + escapeHtml(title) + '</legend><div class="practice-group-head"><p>勾選分類並分別指定題數。</p><div class="practice-group-actions"><button type="button" data-practice-group-action="select">全選</button><button type="button" data-practice-group-action="clear">取消</button></div></div><div class="practice-category-list">' + rows + '</div></fieldset>';
+  }
+  function updatePracticeSelectionTotal() {
+    const selected = Array.from(document.querySelectorAll('.practice-category-check:checked'));
+    const total = selected.reduce(function (sum, checkbox) {
+      const input = byId(checkbox.dataset.countId);
+      return sum + (Number.parseInt(input.value, 10) || 0);
+    }, 0);
+    byId('practice-selection-total').textContent = '已選 ' + selected.length + ' 個分類，預計抽取 ' + total + ' 題。';
+  }
+  function initializePracticeBuilder() {
+    if (practiceBuilderReady) return;
+    const categorySelect = byId('practice-category');
+    const countInput = byId('practice-count');
+    categorySelect.closest('label').hidden = true;
+    countInput.closest('label').hidden = true;
+    const builder = document.createElement('div');
+    builder.id = 'practice-builder';
+    builder.className = 'practice-builder';
+    builder.innerHTML = practiceGroupMarkup('A', 'A 類｜法規題') + practiceGroupMarkup('B', 'B 類｜專業知識題');
+    const controls = document.querySelector('.practice-controls');
+    controls.insertBefore(builder, byId('start-practice'));
+    const total = document.createElement('p');
+    total.id = 'practice-selection-total';
+    total.className = 'practice-selection-total';
+    controls.insertBefore(total, byId('start-practice'));
+    document.querySelectorAll('.practice-category-check').forEach(function (checkbox) {
+      checkbox.addEventListener('change', function () {
+        byId(checkbox.dataset.countId).disabled = !checkbox.checked;
+        updatePracticeSelectionTotal();
+      });
+    });
+    document.querySelectorAll('.practice-category-count').forEach(function (input) { input.addEventListener('input', updatePracticeSelectionTotal); });
+    document.querySelectorAll('[data-practice-group-action]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        const shouldSelect = button.dataset.practiceGroupAction === 'select';
+        button.closest('.practice-group').querySelectorAll('.practice-category-check').forEach(function (checkbox) {
+          checkbox.checked = shouldSelect;
+          byId(checkbox.dataset.countId).disabled = !shouldSelect;
+        });
+        updatePracticeSelectionTotal();
+      });
+    });
+    practiceBuilderReady = true;
+    updatePracticeSelectionTotal();
+  }
   function setMode(mode) {
     document.body.dataset.mode = mode;
     updateNavigation();
     if (mode === 'wrong') renderWrong();
     if (mode === 'manage') renderManager();
-    if (mode === 'practice' && session.length === 0) startPractice();
+    if (mode === 'practice') initializePracticeBuilder();
   }
   function updateNavigation() {
     const mode = document.body.dataset.mode || 'print';
@@ -2318,12 +2395,27 @@ const QUESTION_BANK = [{"id":"10","category":"A｜職業安全衛生法","questi
     window.setTimeout(function () { window.print(); }, 30);
   }
   function startPractice() {
-    const category = byId('practice-category').value;
-    const requested = Math.max(1, Math.min(100, Number.parseInt(byId('practice-count').value, 10) || 10));
-    const pool = allQuestions().filter(function (question) { return !category || question.category === category; });
-    session = shuffle(pool).slice(0, Math.min(requested, pool.length));
+    initializePracticeBuilder();
+    const selected = Array.from(document.querySelectorAll('.practice-category-check:checked'));
+    if (selected.length === 0) { showToast('請至少勾選一個 A 類或 B 類分類。'); return; }
+    const questions = allQuestions();
+    const picked = [];
+    const groupTotals = { A: 0, B: 0 };
+    for (let index = 0; index < selected.length; index += 1) {
+      const checkbox = selected[index];
+      const category = checkbox.dataset.category;
+      const input = byId(checkbox.dataset.countId);
+      const requested = Number.parseInt(input.value, 10);
+      const pool = questions.filter(function (question) { return question.category === category; });
+      if (!Number.isInteger(requested) || requested < 1) { showToast('每個勾選分類的題數至少為 1 題。'); input.focus(); return; }
+      if (requested > pool.length) { showToast(category.slice(2) + '最多只能抽 ' + pool.length + ' 題。'); input.focus(); return; }
+      picked.push.apply(picked, shuffle(pool).slice(0, requested));
+      groupTotals[category.charAt(0)] += requested;
+    }
+    session = shuffle(picked);
     sessionAnswers = {};
-    sessionTitle = category ? category + '｜隨機練習' : '全部分類｜隨機練習';
+    const groupSummary = ['A', 'B'].filter(function (prefix) { return groupTotals[prefix] > 0; }).map(function (prefix) { return prefix + ' 類 ' + groupTotals[prefix] + ' 題'; }).join('＋');
+    sessionTitle = '自訂隨機練習｜' + groupSummary;
     renderPractice();
   }
   function startWrongPractice(ids) {
