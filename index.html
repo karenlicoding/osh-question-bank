@@ -39,11 +39,11 @@ h1 { margin-bottom: 10mm; font-size: 22pt; letter-spacing: .02em; }
 .reference, .status { margin-top: 2mm; font-size: 9.2pt; color: #444; word-break: break-all; }
 a { color: #0b63b6; text-decoration: none; }
 .app-toolbar, #practice-app { display: none; }
-body[data-mode="practice"], body[data-mode="exam"], body[data-mode="wrong"], body[data-mode="manage"] { max-width: 1120px; min-height: 0; padding: 20px; }
-body[data-mode="practice"] #print-bank, body[data-mode="exam"] #print-bank, body[data-mode="wrong"] #print-bank, body[data-mode="manage"] #print-bank { display: none; }
-body[data-mode="practice"] #practice-app, body[data-mode="exam"] #practice-app, body[data-mode="wrong"] #practice-app, body[data-mode="manage"] #practice-app { display: block; }
-body[data-mode="practice"] [data-panel="practice"], body[data-mode="exam"] [data-panel="exam"], body[data-mode="wrong"] [data-panel="wrong"], body[data-mode="manage"] [data-panel="manage"] { display: block; }
-body[data-mode="practice"] .app-toolbar, body[data-mode="exam"] .app-toolbar, body[data-mode="wrong"] .app-toolbar, body[data-mode="manage"] .app-toolbar, body[data-mode="print"] .app-toolbar { display: flex; }
+body[data-mode="practice"], body[data-mode="exam"], body[data-mode="wrong"], body[data-mode="archive"], body[data-mode="manage"] { max-width: 1120px; min-height: 0; padding: 20px; }
+body[data-mode="practice"] #print-bank, body[data-mode="exam"] #print-bank, body[data-mode="wrong"] #print-bank, body[data-mode="archive"] #print-bank, body[data-mode="manage"] #print-bank { display: none; }
+body[data-mode="practice"] #practice-app, body[data-mode="exam"] #practice-app, body[data-mode="wrong"] #practice-app, body[data-mode="archive"] #practice-app, body[data-mode="manage"] #practice-app { display: block; }
+body[data-mode="practice"] [data-panel="practice"], body[data-mode="exam"] [data-panel="exam"], body[data-mode="wrong"] [data-panel="wrong"], body[data-mode="archive"] [data-panel="archive"], body[data-mode="manage"] [data-panel="manage"] { display: block; }
+body[data-mode="practice"] .app-toolbar, body[data-mode="exam"] .app-toolbar, body[data-mode="wrong"] .app-toolbar, body[data-mode="archive"] .app-toolbar, body[data-mode="manage"] .app-toolbar, body[data-mode="print"] .app-toolbar { display: flex; }
 .app-toolbar { max-width: 1120px; margin: 0 auto 18px; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 16px; border: 1px solid #cbd6df; border-radius: 10px; background: #f7fbff; }
 .app-brand { font-size: 15px; font-weight: 700; color: #123b5d; }
 .app-note { margin: 3px 0 0; font-size: 12px; color: #50606d; }
@@ -119,7 +119,7 @@ body[data-mode="practice"] .app-toolbar, body[data-mode="exam"] .app-toolbar, bo
 .backup-actions { margin-top: 12px; }
 .small-note { margin-top: 10px; color: #566671; font-size: 12px; }
 .toast { position: fixed; right: 22px; bottom: 22px; z-index: 10; padding: 10px 14px; border-radius: 7px; background: #163c5a; color: #fff; box-shadow: 0 3px 12px rgba(0,0,0,.2); }
-@media (max-width: 760px) { body[data-mode="practice"], body[data-mode="exam"], body[data-mode="wrong"], body[data-mode="manage"] { padding: 12px; } .app-toolbar { display: block !important; } .app-actions { justify-content: flex-start; margin-top: 10px; } .practice-builder, .exam-actions, .exam-category-summary { grid-template-columns: 1fr; } .practice-category-row { grid-template-columns: auto minmax(0, 1fr) auto; } .practice-available { display: none; } .practice-group-head { align-items: flex-start; } .exam-submit { bottom: 6px; } .manager-layout { grid-template-columns: 1fr; } .editor-options { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { body[data-mode="practice"], body[data-mode="exam"], body[data-mode="wrong"], body[data-mode="archive"], body[data-mode="manage"] { padding: 12px; } .app-toolbar { display: block !important; } .app-actions { justify-content: flex-start; margin-top: 10px; } .practice-builder, .exam-actions, .exam-category-summary { grid-template-columns: 1fr; } .practice-category-row { grid-template-columns: auto minmax(0, 1fr) auto; } .practice-available { display: none; } .practice-group-head { align-items: flex-start; } .exam-submit { bottom: 6px; } .manager-layout { grid-template-columns: 1fr; } .editor-options { grid-template-columns: 1fr; } }
 @media print { html { background: #fff; } body { max-width: none; min-height: 0; padding: 0; background: #fff; } .app-toolbar, #practice-app, .print-actions { display: none !important; } #print-bank { display: block !important; } .index { min-height: 0; break-after: page; page-break-after: always; } .index-list li { padding: 1.3mm 0; } a { color: #0b63b6; } }
 </style>
 </head>
@@ -130,6 +130,7 @@ body[data-mode="practice"] .app-toolbar, body[data-mode="exam"] .app-toolbar, bo
 <button type="button" data-mode-button="practice">隨機練習</button>
 <button type="button" data-mode-button="exam">模擬考</button>
 <button type="button" data-mode-button="wrong" id="wrong-nav">錯題複習</button>
+<button type="button" data-mode-button="archive" id="archive-nav">封存區</button>
 <button type="button" data-mode-button="manage">編修與備份</button>
 <button type="button" data-mode-button="print">A4 題庫</button>
 <button type="button" class="print-button" id="print-bank-button">列印 A4</button>
@@ -157,11 +158,15 @@ body[data-mode="practice"] .app-toolbar, body[data-mode="exam"] .app-toolbar, bo
 <div class="wrong-actions"><button type="button" class="primary" id="retry-all-wrong">重練全部錯題</button><button type="button" id="undo-wrong-remove">復原上次移除</button><button type="button" class="danger" id="clear-wrong">清除全部錯題紀錄</button></div></div>
 <div id="wrong-list" class="wrong-list"></div>
 </section>
+<section class="practice-panel" data-panel="archive">
+<div class="panel-card"><h1>已答對錯題封存區</h1><p>在錯題複習中答對的題目會自動移入此處；可拉回錯題區繼續練習，或刪除封存紀錄。刪除封存紀錄不會刪除原題庫題目。</p></div>
+<div id="archive-list" class="wrong-list"></div>
+</section>
 <section class="practice-panel" data-panel="manage">
 <div class="panel-card"><h1>題目編修、還原與備份</h1><p>編修只影響本機練習資料；可隨時還原個別題目或全部回復為官方查核主檔，並可匯出／載入備份。</p>
 <div class="manager-search"><label>分類<select id="manager-category"><option value="">全部分類</option><option value="A｜職業安全衛生法">A｜職業安全衛生法（57 題）</option><option value="A｜職業安全衛生法施行細則">A｜職業安全衛生法施行細則（17 題）</option><option value="A｜職業安全衛生管理辦法">A｜職業安全衛生管理辦法（62 題）</option><option value="A｜職業安全衛生設施規則">A｜職業安全衛生設施規則（91 題）</option><option value="A｜職業安全衛生教育訓練規則">A｜職業安全衛生教育訓練規則（8 題）</option><option value="A｜危害性化學品標示及通識規則">A｜危害性化學品標示及通識規則（13 題）</option><option value="A｜危險性機械及設備安全檢查規則">A｜危險性機械及設備安全檢查規則（7 題）</option><option value="A｜起重升降機具安全規則">A｜起重升降機具安全規則（5 題）</option><option value="A｜高壓氣體勞工安全規則">A｜高壓氣體勞工安全規則（4 題）</option><option value="A｜勞工健康保護規則">A｜勞工健康保護規則（14 題）</option><option value="A｜勞工作業環境監測實施辦法">A｜勞工作業環境監測實施辦法（12 題）</option><option value="A｜缺氧症預防規則">A｜缺氧症預防規則（2 題）</option><option value="A｜危險性工作場所審查及檢查辦法">A｜危險性工作場所審查及檢查辦法（9 題）</option><option value="A｜勞動檢查法">A｜勞動檢查法（6 題）</option><option value="A｜勞動檢查法施行細則">A｜勞動檢查法施行細則（7 題）</option><option value="A｜職業災害勞工保護法">A｜職業災害勞工保護法（11 題）</option><option value="A｜其他待確認法規">A｜其他待確認法規（25 題）</option><option value="A｜機械設備器具安全標準">A｜機械設備器具安全標準（4 題）</option><option value="A｜營造安全衛生設施標準">A｜營造安全衛生設施標準（1 題）</option><option value="A｜有機溶劑中毒預防規則">A｜有機溶劑中毒預防規則（3 題）</option><option value="A｜特定化學物質危害預防標準">A｜特定化學物質危害預防標準（1 題）</option><option value="B｜職安衛管理系統、風險評估與管理工具">B｜職安衛管理系統、風險評估與管理工具（156 題）</option><option value="B｜機械安全、設備操作及防護原理">B｜機械安全、設備操作及防護原理（38 題）</option><option value="B｜物理性危害、聲學及輻射">B｜物理性危害、聲學及輻射（47 題）</option><option value="B｜化學性危害、氣體與粉塵">B｜化學性危害、氣體與粉塵（71 題）</option><option value="B｜電氣安全與電學原理">B｜電氣安全與電學原理（75 題）</option><option value="B｜火災爆炸、燃燒與消防原理">B｜火災爆炸、燃燒與消防原理（63 題）</option><option value="B｜職災原因分析、調查及統計原理">B｜職災原因分析、調查及統計原理（64 題）</option><option value="B｜急救處理、熱傷害及個人防護">B｜急救處理、熱傷害及個人防護（24 題）</option><option value="B｜作業場所危害辨識（塔槽及局限空間）">B｜作業場所危害辨識（塔槽及局限空間）（18 題）</option><option value="B｜墜落、倒塌及物體飛落危害">B｜墜落、倒塌及物體飛落危害（42 題）</option><option value="B｜其他專業知識">B｜其他專業知識（42 題）</option><option value="C｜其他">C｜其他（1 題）</option></select></label><label>搜尋原題號或關鍵字<input id="manager-filter" type="search" placeholder="例如：10、風險評估"></label><button type="button" id="manager-search-button">搜尋題目</button></div>
 <div class="manager-layout"><div id="manager-list" class="manager-list"></div><div id="editor-area" class="panel-card"><p class="editor-empty">請從左側選擇題目進行編修。</p></div></div>
-<div class="backup-actions"><button type="button" id="restore-all-edits">還原全部自訂編修</button><button type="button" id="export-data">下載本機備份</button><button type="button" id="import-data-button">載入備份</button><input type="file" id="import-data" accept="application/json" hidden></div><p class="small-note">載入備份會取代目前裝置上的自訂編修與錯題紀錄。</p></div>
+<div class="backup-actions"><button type="button" id="restore-all-edits">還原全部自訂編修</button><button type="button" id="export-data">下載本機備份</button><button type="button" id="import-data-button">載入備份</button><input type="file" id="import-data" accept="application/json" hidden></div><p class="small-note">載入備份會取代目前裝置上的自訂編修、錯題紀錄與封存紀錄。</p></div>
 </section>
 </section>
 <main id="print-bank">
@@ -2297,13 +2302,16 @@ const QUESTION_BANK = [{"id":"10","category":"A｜職業安全衛生法","questi
   const STORAGE_PREFIX = 'osh-question-bank.practice.v1';
   const CUSTOM_KEY = STORAGE_PREFIX + '.custom';
   const WRONG_KEY = STORAGE_PREFIX + '.wrong';
+  const ARCHIVE_KEY = STORAGE_PREFIX + '.archive';
   const LETTERS = ['①', '②', '③', '④'];
   let custom = readStorage(CUSTOM_KEY, {});
   let wrong = readStorage(WRONG_KEY, {});
+  let archive = readStorage(ARCHIVE_KEY, {});
   let lastRemovedWrong = null;
   let session = [];
   let sessionAnswers = {};
   let sessionTitle = '隨機題庫練習';
+  let sessionKind = 'random';
   let managerSelectedId = null;
   let practiceBuilderReady = false;
   let examSession = [];
@@ -2313,7 +2321,7 @@ const QUESTION_BANK = [{"id":"10","category":"A｜職業安全衛生法","questi
 
   function byId(id) { return document.getElementById(id); }
   function readStorage(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch (error) { return fallback; } }
-  function writeStorage() { localStorage.setItem(CUSTOM_KEY, JSON.stringify(custom)); localStorage.setItem(WRONG_KEY, JSON.stringify(wrong)); }
+  function writeStorage() { localStorage.setItem(CUSTOM_KEY, JSON.stringify(custom)); localStorage.setItem(WRONG_KEY, JSON.stringify(wrong)); localStorage.setItem(ARCHIVE_KEY, JSON.stringify(archive)); }
   function escapeHtml(value) {
     const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
     return String(value == null ? '' : value).replace(/[&<>"']/g, function (char) { return map[char]; });
@@ -2407,6 +2415,7 @@ const QUESTION_BANK = [{"id":"10","category":"A｜職業安全衛生法","questi
     document.body.dataset.mode = mode;
     updateNavigation();
     if (mode === 'wrong') renderWrong();
+    if (mode === 'archive') renderArchive();
     if (mode === 'manage') renderManager();
     if (mode === 'practice') initializePracticeBuilder();
     if (mode === 'exam') renderExam();
@@ -2417,6 +2426,7 @@ const QUESTION_BANK = [{"id":"10","category":"A｜職業安全衛生法","questi
       button.classList.toggle('active', button.dataset.modeButton === mode);
     });
     byId('wrong-nav').textContent = '錯題複習（' + Object.keys(wrong).length + '）';
+    byId('archive-nav').textContent = '封存區（' + Object.keys(archive).length + '）';
   }
   function printBank() {
     const originalMode = document.body.dataset.mode || 'print';
@@ -2444,6 +2454,7 @@ const QUESTION_BANK = [{"id":"10","category":"A｜職業安全衛生法","questi
     }
     session = shuffle(picked);
     sessionAnswers = {};
+    sessionKind = 'random';
     const groupSummary = ['A', 'B'].filter(function (prefix) { return groupTotals[prefix] > 0; }).map(function (prefix) { return prefix + ' 類 ' + groupTotals[prefix] + ' 題'; }).join('＋');
     sessionTitle = '自訂隨機練習｜' + groupSummary;
     renderPractice();
@@ -2452,6 +2463,7 @@ const QUESTION_BANK = [{"id":"10","category":"A｜職業安全衛生法","questi
     const selectedIds = ids || Object.keys(wrong);
     session = shuffle(selectedIds.map(getQuestion).filter(Boolean));
     sessionAnswers = {};
+    sessionKind = 'wrong';
     sessionTitle = '錯題重點複習';
     if (session.length === 0) { showToast('目前沒有可重練的錯題。'); return; }
     setMode('practice');
@@ -2466,6 +2478,8 @@ const QUESTION_BANK = [{"id":"10","category":"A｜職業安全衛生法","questi
     byId('practice-list').innerHTML = session.map(function (question, index) {
       const selected = sessionAnswers[index];
       const hasAnswered = selected != null;
+      const mistakeRecord = wrong[question.id] || archive[question.id];
+      const mistakeLabel = sessionKind === 'wrong' && mistakeRecord ? '｜累積答錯 ' + Number(mistakeRecord.mistakes || 0) + ' 次' : '';
       const options = question.options.map(function (option, optionIndex) {
         const value = optionIndex + 1;
         const checked = selected === value ? ' checked' : '';
@@ -2475,12 +2489,24 @@ const QUESTION_BANK = [{"id":"10","category":"A｜職業安全衛生法","questi
       let feedback = '';
       if (hasAnswered) {
         const isCorrect = selected === question.answer;
-        feedback = '<div class="practice-feedback ' + (isCorrect ? 'correct' : 'wrong') + '"><strong>' + (isCorrect ? '答對了。' : '答錯了，已加入錯題複習。') + '</strong><div class="answer-key">正確答案：' + LETTERS[question.answer - 1] + ' ' + escapeHtml(question.options[question.answer - 1]) + '</div><div><strong>詳解：</strong>' + lineBreaks(question.detail || '未提供詳解') + '</div>' + (question.reference ? '<div class="small-note">官方來源：' + lineBreaks(question.reference) + '</div>' : '') + '</div>';
+        const archivedAfterCorrect = isCorrect && sessionKind === 'wrong' && Boolean(archive[question.id]);
+        feedback = '<div class="practice-feedback ' + (isCorrect ? 'correct' : 'wrong') + '"><strong>' + (archivedAfterCorrect ? '答對了，已移至封存區。' : (isCorrect ? '答對了。' : '答錯了，保留在錯題複習。')) + '</strong><div class="answer-key">正確答案：' + LETTERS[question.answer - 1] + ' ' + escapeHtml(question.options[question.answer - 1]) + '</div><div><strong>詳解：</strong>' + lineBreaks(question.detail || '未提供詳解') + '</div>' + (question.reference ? '<div class="small-note">官方來源：' + lineBreaks(question.reference) + '</div>' : '') + '</div>';
       }
       const submit = hasAnswered ? '' : '<button type="button" class="primary" data-answer-index="' + index + '">送出答案</button>';
-      return '<article class="practice-question"><div class="practice-meta">第 ' + (index + 1) + ' 題｜' + escapeHtml(question.category) + '｜原題號 ' + escapeHtml(question.id) + '</div><h2>' + escapeHtml(question.question) + '</h2><div>' + options + '</div>' + submit + feedback + '</article>';
+      return '<article class="practice-question"><div class="practice-meta">第 ' + (index + 1) + ' 題｜' + escapeHtml(question.category) + '｜原題號 ' + escapeHtml(question.id) + mistakeLabel + '</div><h2>' + escapeHtml(question.question) + '</h2><div>' + options + '</div>' + submit + feedback + '</article>';
     }).join('');
     document.querySelectorAll('[data-answer-index]').forEach(function (button) { button.addEventListener('click', function () { submitAnswer(Number(button.dataset.answerIndex)); }); });
+  }
+  function recordWrongAnswer(question, selected) {
+    const previous = wrong[question.id] || archive[question.id] || { mistakes: 0 };
+    wrong[question.id] = { mistakes: Number(previous.mistakes || 0) + 1, lastWrongAt: new Date().toISOString(), lastSelected: selected };
+    if (archive[question.id]) delete archive[question.id];
+  }
+  function archiveCorrectWrong(question) {
+    if (!wrong[question.id]) return false;
+    archive[question.id] = Object.assign({}, wrong[question.id], { archivedAt: new Date().toISOString() });
+    delete wrong[question.id];
+    return true;
   }
   function submitAnswer(index) {
     const selected = document.querySelector('input[name="practice-' + index + '"]:checked');
@@ -2489,9 +2515,11 @@ const QUESTION_BANK = [{"id":"10","category":"A｜職業安全衛生法","questi
     sessionAnswers[index] = value;
     const question = session[index];
     if (value !== question.answer) {
-      const previous = wrong[question.id] || { mistakes: 0 };
-      wrong[question.id] = { mistakes: Number(previous.mistakes || 0) + 1, lastWrongAt: new Date().toISOString(), lastSelected: value };
+      recordWrongAnswer(question, value);
       saveAndRefresh();
+    } else if (sessionKind === 'wrong' && archiveCorrectWrong(question)) {
+      saveAndRefresh();
+      showToast('答對了，題目已移至封存區。');
     }
     renderPractice();
   }
@@ -2647,9 +2675,7 @@ const QUESTION_BANK = [{"id":"10","category":"A｜職業安全衛生法","questi
     const results = examResults();
     results.forEach(function (result) {
       if (result.correct) return;
-      const id = result.question.id;
-      const previous = wrong[id] || { mistakes: 0 };
-      wrong[id] = { mistakes: Number(previous.mistakes || 0) + 1, lastWrongAt: new Date().toISOString(), lastSelected: result.selected };
+      recordWrongAnswer(result.question, result.selected);
     });
     examSubmitted = true;
     saveAndRefresh();
@@ -2678,7 +2704,39 @@ const QUESTION_BANK = [{"id":"10","category":"A｜職業安全衛生法","questi
     document.querySelectorAll('[data-remove-wrong]').forEach(function (button) { button.addEventListener('click', function () { removeWrong(button.dataset.removeWrong); }); });
   }
   function removeWrong(id) { if (!wrong[id]) return; lastRemovedWrong = { id: id, record: wrong[id] }; delete wrong[id]; saveAndRefresh(); renderWrong(); showToast('已移除錯題紀錄，可按「復原上次移除」。'); }
-  function undoWrongRemoval() { if (!lastRemovedWrong) { showToast('沒有可復原的移除動作。'); return; } wrong[lastRemovedWrong.id] = lastRemovedWrong.record; lastRemovedWrong = null; saveAndRefresh(); renderWrong(); showToast('已復原錯題紀錄。'); }
+  function undoWrongRemoval() { if (!lastRemovedWrong) { showToast('沒有可復原的移除動作。'); return; } wrong[lastRemovedWrong.id] = lastRemovedWrong.record; if (archive[lastRemovedWrong.id]) delete archive[lastRemovedWrong.id]; lastRemovedWrong = null; saveAndRefresh(); renderWrong(); showToast('已復原錯題紀錄。'); }
+  function renderArchive() {
+    const entries = Object.keys(archive).map(function (id) { return { question: getQuestion(id), record: archive[id] }; }).filter(function (item) { return item.question; }).sort(function (left, right) { return String(right.record.archivedAt || '').localeCompare(String(left.record.archivedAt || '')); });
+    if (entries.length === 0) { byId('archive-list').innerHTML = '<div class="panel-card">封存區目前沒有題目。在錯題複習中答對後，題目會自動移到這裡。</div>'; return; }
+    byId('archive-list').innerHTML = entries.map(function (item) {
+      const question = item.question; const record = item.record;
+      return '<article class="wrong-item"><div class="practice-meta">' + escapeHtml(question.category) + '｜原題號 ' + escapeHtml(question.id) + '｜封存前累積答錯 ' + Number(record.mistakes || 0) + ' 次｜封存：' + escapeHtml(displayTime(record.archivedAt)) + '</div><h3>' + escapeHtml(question.question) + '</h3><p><strong>重點：</strong>' + lineBreaks(question.detail || '未提供詳解') + '</p><div class="wrong-actions"><button type="button" data-restore-archive="' + escapeHtml(question.id) + '">拉回錯題複習區</button><button type="button" class="danger" data-delete-archive="' + escapeHtml(question.id) + '">刪除封存紀錄</button></div></article>';
+    }).join('');
+    document.querySelectorAll('[data-restore-archive]').forEach(function (button) { button.addEventListener('click', function () { restoreArchivedQuestion(button.dataset.restoreArchive); }); });
+    document.querySelectorAll('[data-delete-archive]').forEach(function (button) { button.addEventListener('click', function () { deleteArchivedQuestion(button.dataset.deleteArchive); }); });
+  }
+  function restoreArchivedQuestion(id) {
+    if (!archive[id]) return;
+    const record = archive[id];
+    const existing = wrong[id];
+    wrong[id] = {
+      mistakes: Math.max(Number(existing && existing.mistakes || 0), Number(record.mistakes || 0)),
+      lastWrongAt: record.lastWrongAt || new Date().toISOString(),
+      lastSelected: record.lastSelected == null ? null : record.lastSelected
+    };
+    delete archive[id];
+    saveAndRefresh();
+    renderArchive();
+    showToast('已拉回錯題複習區。');
+  }
+  function deleteArchivedQuestion(id) {
+    if (!archive[id]) return;
+    if (!window.confirm('確定刪除此題的封存紀錄？原題庫題目不會被刪除。')) return;
+    delete archive[id];
+    saveAndRefresh();
+    renderArchive();
+    showToast('已刪除封存紀錄。');
+  }
   function matchingManagerQuestions() {
     const category = byId('manager-category').value;
     const keyword = byId('manager-filter').value.trim().toLocaleLowerCase();
@@ -2710,7 +2768,7 @@ const QUESTION_BANK = [{"id":"10","category":"A｜職業安全衛生法","questi
   }
   function restoreQuestionEdit() { if (!managerSelectedId || !custom[managerSelectedId]) { showToast('此題目前沒有本機編修。'); return; } delete custom[managerSelectedId]; saveAndRefresh(); renderManager(); showToast('已還原官方查核主檔。'); }
   function exportData() {
-    const payload = { version: 1, exportedAt: new Date().toISOString(), custom: custom, wrong: wrong };
+    const payload = { version: 2, exportedAt: new Date().toISOString(), custom: custom, wrong: wrong, archive: archive };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob); const anchor = document.createElement('a'); anchor.href = url; anchor.download = '職安衛題庫_本機練習備份.json'; anchor.click(); URL.revokeObjectURL(url); showToast('已下載本機備份。');
   }
@@ -2721,9 +2779,11 @@ const QUESTION_BANK = [{"id":"10","category":"A｜職業安全衛生法","questi
       try {
         const payload = JSON.parse(String(reader.result));
         if (!payload || typeof payload !== 'object') throw new Error('格式錯誤');
-        if (!window.confirm('載入備份將取代目前本機編修與錯題紀錄，是否繼續？')) return;
+        if (!window.confirm('載入備份將取代目前本機編修、錯題紀錄與封存紀錄，是否繼續？')) return;
         custom = payload.custom && typeof payload.custom === 'object' ? payload.custom : {};
         wrong = payload.wrong && typeof payload.wrong === 'object' ? payload.wrong : {};
+        if (Object.prototype.hasOwnProperty.call(payload, 'archive')) archive = payload.archive && typeof payload.archive === 'object' ? payload.archive : {};
+        Object.keys(wrong).forEach(function (id) { if (archive[id]) delete archive[id]; });
         lastRemovedWrong = null; saveAndRefresh(); renderManager(); showToast('已載入本機備份。');
       } catch (error) { showToast('無法讀取備份檔，請確認檔案格式。'); }
     };
@@ -2746,7 +2806,7 @@ const QUESTION_BANK = [{"id":"10","category":"A｜職業安全衛生法","questi
   byId('import-data-button').addEventListener('click', function () { byId('import-data').click(); });
   byId('import-data').addEventListener('change', function () { importData(this.files && this.files[0]); this.value = ''; });
   const requestedMode = new URLSearchParams(window.location.search).get('mode');
-  setMode(['practice', 'exam', 'wrong', 'manage', 'print'].includes(requestedMode) ? requestedMode : 'print');
+  setMode(['practice', 'exam', 'wrong', 'archive', 'manage', 'print'].includes(requestedMode) ? requestedMode : 'print');
 }());
 </script>
 </body>
