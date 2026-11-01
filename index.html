@@ -39,17 +39,17 @@ h1 { margin-bottom: 10mm; font-size: 22pt; letter-spacing: .02em; }
 .reference, .status { margin-top: 2mm; font-size: 9.2pt; color: #444; word-break: break-all; }
 a { color: #0b63b6; text-decoration: none; }
 .app-toolbar, #practice-app { display: none; }
-body[data-mode="practice"], body[data-mode="wrong"], body[data-mode="manage"] { max-width: 1120px; min-height: 0; padding: 20px; }
-body[data-mode="practice"] #print-bank, body[data-mode="wrong"] #print-bank, body[data-mode="manage"] #print-bank { display: none; }
-body[data-mode="practice"] #practice-app, body[data-mode="wrong"] #practice-app, body[data-mode="manage"] #practice-app { display: block; }
-body[data-mode="practice"] [data-panel="practice"], body[data-mode="wrong"] [data-panel="wrong"], body[data-mode="manage"] [data-panel="manage"] { display: block; }
-body[data-mode="practice"] .app-toolbar, body[data-mode="wrong"] .app-toolbar, body[data-mode="manage"] .app-toolbar, body[data-mode="print"] .app-toolbar { display: flex; }
+body[data-mode="practice"], body[data-mode="exam"], body[data-mode="wrong"], body[data-mode="manage"] { max-width: 1120px; min-height: 0; padding: 20px; }
+body[data-mode="practice"] #print-bank, body[data-mode="exam"] #print-bank, body[data-mode="wrong"] #print-bank, body[data-mode="manage"] #print-bank { display: none; }
+body[data-mode="practice"] #practice-app, body[data-mode="exam"] #practice-app, body[data-mode="wrong"] #practice-app, body[data-mode="manage"] #practice-app { display: block; }
+body[data-mode="practice"] [data-panel="practice"], body[data-mode="exam"] [data-panel="exam"], body[data-mode="wrong"] [data-panel="wrong"], body[data-mode="manage"] [data-panel="manage"] { display: block; }
+body[data-mode="practice"] .app-toolbar, body[data-mode="exam"] .app-toolbar, body[data-mode="wrong"] .app-toolbar, body[data-mode="manage"] .app-toolbar, body[data-mode="print"] .app-toolbar { display: flex; }
 .app-toolbar { max-width: 1120px; margin: 0 auto 18px; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 16px; border: 1px solid #cbd6df; border-radius: 10px; background: #f7fbff; }
 .app-brand { font-size: 15px; font-weight: 700; color: #123b5d; }
 .app-note { margin: 3px 0 0; font-size: 12px; color: #50606d; }
 .app-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 7px; }
-.app-actions button, .practice-controls button, .wrong-actions button, .editor-actions button, .manager-search button, .backup-actions button { border: 1px solid #1f5f9f; border-radius: 6px; padding: 7px 11px; background: #fff; color: #1f5f9f; font: inherit; cursor: pointer; }
-.app-actions button.active, .app-actions button.print-button, .practice-controls button.primary, .editor-actions button.primary { background: #1f5f9f; color: #fff; }
+.app-actions button, .practice-controls button, .exam-actions button, .exam-submit button, .prompt-actions button, .wrong-actions button, .editor-actions button, .manager-search button, .backup-actions button { border: 1px solid #1f5f9f; border-radius: 6px; padding: 7px 11px; background: #fff; color: #1f5f9f; font: inherit; cursor: pointer; }
+.app-actions button.active, .app-actions button.print-button, .practice-controls button.primary, .exam-actions button.primary, .exam-submit button.primary, .prompt-actions button.primary, .editor-actions button.primary { background: #1f5f9f; color: #fff; }
 .practice-panel { display: none; max-width: 1120px; margin: 0 auto; }
 .panel-card { margin-bottom: 16px; padding: 18px; border: 1px solid #d5dde3; border-radius: 10px; background: #fff; box-shadow: 0 2px 8px rgba(30, 60, 85, .06); }
 .panel-card h1 { margin: 0 0 6px; font-size: 22px; }
@@ -87,6 +87,19 @@ body[data-mode="practice"] .app-toolbar, body[data-mode="wrong"] .app-toolbar, b
 .practice-feedback.correct { border-left-color: #2e8b57; background: #eff9f2; }
 .practice-feedback.wrong { border-left-color: #bf3535; background: #fff2f2; }
 .practice-feedback .answer-key { color: #bc1717; font-weight: 700; }
+.exam-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
+.exam-choice { padding: 14px; border: 1px solid #ccd8e1; border-radius: 8px; background: #f8fbfd; }
+.exam-choice strong { display: block; margin-bottom: 4px; color: #173f5e; font-size: 16px; }
+.exam-choice p { min-height: 40px; margin-bottom: 10px; font-size: 13px; }
+.exam-question.unanswered { border-color: #d49a38; }
+.exam-submit { position: sticky; bottom: 12px; z-index: 4; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 18px 0; padding: 12px 14px; border: 1px solid #9eb3c3; border-radius: 9px; background: rgba(247, 251, 255, .96); box-shadow: 0 3px 12px rgba(30, 60, 85, .13); }
+.exam-result { border-color: #87ad8e; background: #f7fcf8; }
+.exam-result h2 { margin: 0 0 8px; color: #214e2a; }
+.exam-score { margin: 8px 0 14px; color: #174a24; font-size: 30px; font-weight: 800; }
+.exam-category-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 12px; margin: 12px 0; padding: 0; list-style: none; }
+.exam-category-summary li { padding: 6px 8px; border-radius: 5px; background: #fff; font-size: 13px; }
+.exam-prompt { width: 100%; min-height: 300px; margin-top: 10px; padding: 10px; border: 1px solid #9eafb9; border-radius: 6px; background: #fff; color: #17232b; font: 13px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; resize: vertical; }
+.prompt-actions { display: flex; justify-content: flex-end; margin-top: 8px; }
 .wrong-list { display: grid; gap: 10px; margin-top: 14px; }
 .wrong-item { padding: 14px; border: 1px solid #e0c5c5; border-radius: 8px; background: #fffafa; }
 .wrong-item h3 { margin: 0 0 6px; font-size: 16px; }
@@ -106,7 +119,7 @@ body[data-mode="practice"] .app-toolbar, body[data-mode="wrong"] .app-toolbar, b
 .backup-actions { margin-top: 12px; }
 .small-note { margin-top: 10px; color: #566671; font-size: 12px; }
 .toast { position: fixed; right: 22px; bottom: 22px; z-index: 10; padding: 10px 14px; border-radius: 7px; background: #163c5a; color: #fff; box-shadow: 0 3px 12px rgba(0,0,0,.2); }
-@media (max-width: 760px) { body[data-mode="practice"], body[data-mode="wrong"], body[data-mode="manage"] { padding: 12px; } .app-toolbar { display: block !important; } .app-actions { justify-content: flex-start; margin-top: 10px; } .practice-builder { grid-template-columns: 1fr; } .practice-category-row { grid-template-columns: auto minmax(0, 1fr) auto; } .practice-available { display: none; } .practice-group-head { align-items: flex-start; } .manager-layout { grid-template-columns: 1fr; } .editor-options { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { body[data-mode="practice"], body[data-mode="exam"], body[data-mode="wrong"], body[data-mode="manage"] { padding: 12px; } .app-toolbar { display: block !important; } .app-actions { justify-content: flex-start; margin-top: 10px; } .practice-builder, .exam-actions, .exam-category-summary { grid-template-columns: 1fr; } .practice-category-row { grid-template-columns: auto minmax(0, 1fr) auto; } .practice-available { display: none; } .practice-group-head { align-items: flex-start; } .exam-submit { bottom: 6px; } .manager-layout { grid-template-columns: 1fr; } .editor-options { grid-template-columns: 1fr; } }
 @media print { html { background: #fff; } body { max-width: none; min-height: 0; padding: 0; background: #fff; } .app-toolbar, #practice-app, .print-actions { display: none !important; } #print-bank { display: block !important; } .index { min-height: 0; break-after: page; page-break-after: always; } .index-list li { padding: 1.3mm 0; } a { color: #0b63b6; } }
 </style>
 </head>
@@ -115,6 +128,7 @@ body[data-mode="practice"] .app-toolbar, body[data-mode="wrong"] .app-toolbar, b
 <div><div class="app-brand">職安衛題庫｜離線練習與列印</div><p class="app-note">練習紀錄與編修內容僅存於本機瀏覽器，可匯出備份或還原原題。</p></div>
 <nav class="app-actions" aria-label="題庫功能">
 <button type="button" data-mode-button="practice">隨機練習</button>
+<button type="button" data-mode-button="exam">模擬考</button>
 <button type="button" data-mode-button="wrong" id="wrong-nav">錯題複習</button>
 <button type="button" data-mode-button="manage">編修與備份</button>
 <button type="button" data-mode-button="print">A4 題庫</button>
@@ -126,6 +140,17 @@ body[data-mode="practice"] .app-toolbar, body[data-mode="wrong"] .app-toolbar, b
 <div class="panel-card"><h1>隨機題庫練習</h1><p>依分類與題數抽題；答錯後自動納入錯題複習。答案與詳解會在作答後顯示。</p>
 <div class="practice-controls"><label>題目範圍<select id="practice-category"><option value="">全部分類</option><option value="A｜職業安全衛生法">A｜職業安全衛生法（57 題）</option><option value="A｜職業安全衛生法施行細則">A｜職業安全衛生法施行細則（17 題）</option><option value="A｜職業安全衛生管理辦法">A｜職業安全衛生管理辦法（62 題）</option><option value="A｜職業安全衛生設施規則">A｜職業安全衛生設施規則（91 題）</option><option value="A｜職業安全衛生教育訓練規則">A｜職業安全衛生教育訓練規則（8 題）</option><option value="A｜危害性化學品標示及通識規則">A｜危害性化學品標示及通識規則（13 題）</option><option value="A｜危險性機械及設備安全檢查規則">A｜危險性機械及設備安全檢查規則（7 題）</option><option value="A｜起重升降機具安全規則">A｜起重升降機具安全規則（5 題）</option><option value="A｜高壓氣體勞工安全規則">A｜高壓氣體勞工安全規則（4 題）</option><option value="A｜勞工健康保護規則">A｜勞工健康保護規則（14 題）</option><option value="A｜勞工作業環境監測實施辦法">A｜勞工作業環境監測實施辦法（12 題）</option><option value="A｜缺氧症預防規則">A｜缺氧症預防規則（2 題）</option><option value="A｜危險性工作場所審查及檢查辦法">A｜危險性工作場所審查及檢查辦法（9 題）</option><option value="A｜勞動檢查法">A｜勞動檢查法（6 題）</option><option value="A｜勞動檢查法施行細則">A｜勞動檢查法施行細則（7 題）</option><option value="A｜職業災害勞工保護法">A｜職業災害勞工保護法（11 題）</option><option value="A｜其他待確認法規">A｜其他待確認法規（25 題）</option><option value="A｜機械設備器具安全標準">A｜機械設備器具安全標準（4 題）</option><option value="A｜營造安全衛生設施標準">A｜營造安全衛生設施標準（1 題）</option><option value="A｜有機溶劑中毒預防規則">A｜有機溶劑中毒預防規則（3 題）</option><option value="A｜特定化學物質危害預防標準">A｜特定化學物質危害預防標準（1 題）</option><option value="B｜職安衛管理系統、風險評估與管理工具">B｜職安衛管理系統、風險評估與管理工具（156 題）</option><option value="B｜機械安全、設備操作及防護原理">B｜機械安全、設備操作及防護原理（38 題）</option><option value="B｜物理性危害、聲學及輻射">B｜物理性危害、聲學及輻射（47 題）</option><option value="B｜化學性危害、氣體與粉塵">B｜化學性危害、氣體與粉塵（71 題）</option><option value="B｜電氣安全與電學原理">B｜電氣安全與電學原理（75 題）</option><option value="B｜火災爆炸、燃燒與消防原理">B｜火災爆炸、燃燒與消防原理（63 題）</option><option value="B｜職災原因分析、調查及統計原理">B｜職災原因分析、調查及統計原理（64 題）</option><option value="B｜急救處理、熱傷害及個人防護">B｜急救處理、熱傷害及個人防護（24 題）</option><option value="B｜作業場所危害辨識（塔槽及局限空間）">B｜作業場所危害辨識（塔槽及局限空間）（18 題）</option><option value="B｜墜落、倒塌及物體飛落危害">B｜墜落、倒塌及物體飛落危害（42 題）</option><option value="B｜其他專業知識">B｜其他專業知識（42 題）</option><option value="C｜其他">C｜其他（1 題）</option></select></label><label>題數<input id="practice-count" type="number" min="1" max="100" value="10"></label><button type="button" class="primary" id="start-practice">開始隨機練習</button></div></div>
 <div id="practice-summary" class="practice-summary">請設定範圍後開始練習。</div><div id="practice-list"></div>
+</section>
+<section class="practice-panel" data-panel="exam">
+<div class="panel-card"><h1>100 題模擬考</h1><p>每題 1 分，交卷後計算總分並產生可直接複製給 AI 的弱點分析提示詞。作答期間不顯示答案。</p>
+<div class="exam-actions">
+<div class="exam-choice"><strong>全部題庫隨機 100 題</strong><p>從完整題庫抽取 100 題；題庫不足時才會重複出題。</p><button type="button" class="primary" id="start-all-exam">開始全部題庫模擬考</button></div>
+<div class="exam-choice"><strong>錯題紀錄 100 題</strong><p>每道錯題先出現一次，再依答錯次數加權隨機補足；不足 100 題可重複出現。</p><button type="button" class="primary" id="start-wrong-exam">開始錯題模擬考</button></div>
+</div></div>
+<div id="exam-summary" class="practice-summary">請選擇一種模擬考開始作答。</div>
+<section id="exam-result" class="panel-card exam-result" hidden><h2>模擬考成績</h2><div id="exam-score" class="exam-score"></div><div id="exam-result-detail"></div><h3>AI 分析提示詞</h3><p>以下內容已整理本次成績、分類表現與錯題，可直接複製給 AI。</p><textarea id="exam-ai-prompt" class="exam-prompt" readonly aria-label="AI 分析提示詞"></textarea><div class="prompt-actions"><button type="button" class="primary" id="copy-exam-prompt">複製提示詞</button></div></section>
+<div id="exam-list"></div>
+<div id="exam-submit-wrap" class="exam-submit" hidden><strong id="exam-submit-progress">已作答 0／100 題</strong><button type="button" class="primary" id="submit-exam">交卷並計分</button></div>
 </section>
 <section class="practice-panel" data-panel="wrong">
 <div class="panel-card"><h1>錯題重點複習</h1><p>錯題會保留答錯次數與最近答錯時間；完成複習後可逐題移除，或還原上次移除的紀錄。</p>
@@ -2281,6 +2306,10 @@ const QUESTION_BANK = [{"id":"10","category":"A｜職業安全衛生法","questi
   let sessionTitle = '隨機題庫練習';
   let managerSelectedId = null;
   let practiceBuilderReady = false;
+  let examSession = [];
+  let examAnswers = {};
+  let examTitle = '';
+  let examSubmitted = false;
 
   function byId(id) { return document.getElementById(id); }
   function readStorage(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch (error) { return fallback; } }
@@ -2326,7 +2355,7 @@ const QUESTION_BANK = [{"id":"10","category":"A｜職業安全衛生法","questi
       const checkboxId = 'practice-category-' + prefix + '-' + index;
       const countId = 'practice-category-count-' + prefix + '-' + index;
       const shortName = item.name.slice(2);
-      return '<div class="practice-category-row"><input type="checkbox" id="' + checkboxId + '" class="practice-category-check" data-category="' + escapeHtml(item.name) + '" data-count-id="' + countId + '"><label class="practice-category-name" for="' + checkboxId + '">' + escapeHtml(shortName) + '</label><span class="practice-available">共 ' + item.available + ' 題</span><label class="practice-count-field" for="' + countId + '">抽題<input type="number" id="' + countId + '" class="practice-category-count" min="1" max="' + item.available + '" value="' + Math.min(5, item.available) + '" disabled aria-label="' + escapeHtml(shortName) + '抽題數"></label></div>';
+      return '<div class="practice-category-row"><input type="checkbox" id="' + checkboxId + '" class="practice-category-check" data-category="' + escapeHtml(item.name) + '" data-count-id="' + countId + '"><label class="practice-category-name" for="' + checkboxId + '">' + escapeHtml(shortName) + '</label><span class="practice-available">共 ' + item.available + ' 題</span><label class="practice-count-field" for="' + countId + '">抽題<input type="number" id="' + countId + '" class="practice-category-count" min="1" max="' + item.available + '" value="' + item.available + '" disabled aria-label="' + escapeHtml(shortName) + '抽題數"></label></div>';
     }).join('');
     return '<fieldset class="practice-group" data-practice-prefix="' + prefix + '"><legend>' + escapeHtml(title) + '</legend><div class="practice-group-head"><p>勾選分類並分別指定題數。</p><div class="practice-group-actions"><button type="button" data-practice-group-action="select">全選</button><button type="button" data-practice-group-action="clear">取消</button></div></div><div class="practice-category-list">' + rows + '</div></fieldset>';
   }
@@ -2380,6 +2409,7 @@ const QUESTION_BANK = [{"id":"10","category":"A｜職業安全衛生法","questi
     if (mode === 'wrong') renderWrong();
     if (mode === 'manage') renderManager();
     if (mode === 'practice') initializePracticeBuilder();
+    if (mode === 'exam') renderExam();
   }
   function updateNavigation() {
     const mode = document.body.dataset.mode || 'print';
@@ -2465,6 +2495,175 @@ const QUESTION_BANK = [{"id":"10","category":"A｜職業安全衛生法","questi
     }
     renderPractice();
   }
+  function drawExamQuestions(pool, count) {
+    if (!pool.length) return [];
+    const selected = shuffle(pool).slice(0, Math.min(count, pool.length));
+    while (selected.length < count) selected.push(pool[Math.floor(Math.random() * pool.length)]);
+    return shuffle(selected);
+  }
+  function drawWrongExamQuestions(count) {
+    const entries = Object.keys(wrong).map(function (id) {
+      return { question: getQuestion(id), mistakes: Math.max(1, Number(wrong[id].mistakes || 1)) };
+    }).filter(function (entry) { return entry.question; });
+    if (!entries.length) return [];
+    const prioritized = shuffle(entries).sort(function (left, right) { return right.mistakes - left.mistakes; });
+    const selected = prioritized.slice(0, count).map(function (entry) { return entry.question; });
+    const totalWeight = entries.reduce(function (sum, entry) { return sum + entry.mistakes; }, 0);
+    while (selected.length < count) {
+      let ticket = Math.random() * totalWeight;
+      let chosen = entries[entries.length - 1];
+      for (let index = 0; index < entries.length; index += 1) {
+        ticket -= entries[index].mistakes;
+        if (ticket < 0) { chosen = entries[index]; break; }
+      }
+      selected.push(chosen.question);
+    }
+    return shuffle(selected);
+  }
+  function startExam(type) {
+    const count = 100;
+    if (type === 'wrong') {
+      examSession = drawWrongExamQuestions(count);
+      if (!examSession.length) { showToast('目前沒有錯題紀錄，請先完成一些練習。'); return; }
+      examTitle = '錯題紀錄加權模擬考';
+    } else {
+      examSession = drawExamQuestions(allQuestions(), count);
+      examTitle = '全部題庫隨機模擬考';
+    }
+    examAnswers = {};
+    examSubmitted = false;
+    setMode('exam');
+    renderExam();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  function examResults() {
+    return examSession.map(function (question, index) {
+      const selected = examAnswers[index] == null ? null : Number(examAnswers[index]);
+      return { question: question, selected: selected, correct: selected === Number(question.answer) };
+    });
+  }
+  function renderExam() {
+    const list = byId('exam-list');
+    const submitWrap = byId('exam-submit-wrap');
+    if (!examSession.length) {
+      byId('exam-summary').textContent = '請選擇一種模擬考開始作答。';
+      byId('exam-result').hidden = true;
+      list.innerHTML = '';
+      submitWrap.hidden = true;
+      return;
+    }
+    const answered = Object.keys(examAnswers).length;
+    byId('exam-summary').innerHTML = '<strong>' + escapeHtml(examTitle) + '</strong>｜共 100 題，每題 1 分；已作答 ' + answered + ' 題，未作答 ' + (examSession.length - answered) + ' 題。';
+    byId('exam-submit-progress').textContent = '已作答 ' + answered + '／' + examSession.length + ' 題';
+    submitWrap.hidden = examSubmitted;
+    if (!examSubmitted) byId('exam-result').hidden = true;
+    list.innerHTML = examSession.map(function (question, index) {
+      const selected = examAnswers[index] == null ? null : Number(examAnswers[index]);
+      const options = question.options.map(function (option, optionIndex) {
+        const value = optionIndex + 1;
+        const checked = selected === value ? ' checked' : '';
+        const disabled = examSubmitted ? ' disabled' : '';
+        return '<label class="practice-option"><input type="radio" name="exam-' + index + '" value="' + value + '" data-exam-index="' + index + '"' + checked + disabled + '><span>' + LETTERS[optionIndex] + ' ' + escapeHtml(option) + '</span></label>';
+      }).join('');
+      let feedback = '';
+      if (examSubmitted) {
+        const isCorrect = selected === Number(question.answer);
+        const selectedText = selected == null ? '未作答' : LETTERS[selected - 1] + ' ' + question.options[selected - 1];
+        feedback = '<div class="practice-feedback ' + (isCorrect ? 'correct' : 'wrong') + '"><strong>' + (isCorrect ? '答對，獲得 1 分。' : '未得分。你的答案：' + escapeHtml(selectedText)) + '</strong><div class="answer-key">正確答案：' + LETTERS[question.answer - 1] + ' ' + escapeHtml(question.options[question.answer - 1]) + '</div>' + (isCorrect ? '' : '<div><strong>詳解：</strong>' + lineBreaks(question.detail || '未提供詳解') + '</div>') + '</div>';
+      }
+      return '<article class="practice-question exam-question' + (selected == null && examSubmitted ? ' unanswered' : '') + '"><div class="practice-meta">第 ' + (index + 1) + ' 題｜' + escapeHtml(question.category) + '｜原題號 ' + escapeHtml(question.id) + '</div><h2>' + escapeHtml(question.question) + '</h2><div>' + options + '</div>' + feedback + '</article>';
+    }).join('');
+    if (!examSubmitted) {
+      document.querySelectorAll('[data-exam-index]').forEach(function (input) {
+        input.addEventListener('change', function () {
+          examAnswers[Number(input.dataset.examIndex)] = Number(input.value);
+          const answeredCount = Object.keys(examAnswers).length;
+          byId('exam-summary').innerHTML = '<strong>' + escapeHtml(examTitle) + '</strong>｜共 100 題，每題 1 分；已作答 ' + answeredCount + ' 題，未作答 ' + (examSession.length - answeredCount) + ' 題。';
+          byId('exam-submit-progress').textContent = '已作答 ' + answeredCount + '／' + examSession.length + ' 題';
+        });
+      });
+    }
+  }
+  function categoryExamStats(results) {
+    const stats = {};
+    results.forEach(function (result) {
+      const category = result.question.category;
+      if (!stats[category]) stats[category] = { total: 0, correct: 0 };
+      stats[category].total += 1;
+      if (result.correct) stats[category].correct += 1;
+    });
+    return Object.keys(stats).map(function (category) {
+      return { category: category, total: stats[category].total, correct: stats[category].correct, rate: Math.round(stats[category].correct / stats[category].total * 100) };
+    }).sort(function (left, right) { return left.rate - right.rate || right.total - left.total; });
+  }
+  function buildExamPrompt(results, score, stats) {
+    const attemptsById = {};
+    results.forEach(function (result) {
+      const id = result.question.id;
+      if (!attemptsById[id]) attemptsById[id] = { question: result.question, total: 0, wrong: 0, selected: [] };
+      attemptsById[id].total += 1;
+      if (!result.correct) {
+        attemptsById[id].wrong += 1;
+        attemptsById[id].selected.push(result.selected);
+      }
+    });
+    const wrongItems = Object.keys(attemptsById).map(function (id) { return attemptsById[id]; }).filter(function (item) { return item.wrong > 0; }).sort(function (left, right) { return right.wrong - left.wrong; });
+    const categoryLines = stats.map(function (item) { return '- ' + item.category + '：' + item.correct + '/' + item.total + '（' + item.rate + '%）'; }).join('\n');
+    const wrongLines = wrongItems.length ? wrongItems.map(function (item, index) {
+      const question = item.question;
+      const selectedLabels = Array.from(new Set(item.selected.map(function (value) { return value == null ? '未作答' : LETTERS[value - 1] + ' ' + question.options[value - 1]; })));
+      const options = question.options.map(function (option, optionIndex) { return LETTERS[optionIndex] + ' ' + option; }).join('；');
+      return (index + 1) + '. [' + question.category + '｜原題號 ' + question.id + '] ' + question.question + '\n   選項：' + options + '\n   我的作答：' + selectedLabels.join('、') + '\n   正確答案：' + LETTERS[question.answer - 1] + ' ' + question.options[question.answer - 1] + '\n   本次出現 ' + item.total + ' 次、答錯 ' + item.wrong + ' 次\n   題庫詳解：' + (question.detail || '未提供');
+    }).join('\n\n') : '本次沒有錯題。';
+    return '你是一位熟悉臺灣職業安全衛生法規與專業知識的考試教練。請根據以下模擬考結果，使用繁體中文分析我的學習狀況。\n\n' +
+      '【模擬考資料】\n' +
+      '- 類型：' + examTitle + '\n' +
+      '- 題數：' + results.length + ' 題，每題 1 分\n' +
+      '- 成績：' + score + ' / ' + results.length + ' 分\n' +
+      '- 答對：' + score + ' 題\n' +
+      '- 答錯或未作答：' + (results.length - score) + ' 題\n\n' +
+      '【分類表現】\n' + categoryLines + '\n\n' +
+      '【錯題資料】\n' + wrongLines + '\n\n' +
+      '請依序輸出：\n' +
+      '1. 整體表現摘要與最需要優先補強的 3 個主題。\n' +
+      '2. 依錯題歸納觀念盲點、常見誤判模式及容易混淆的選項。\n' +
+      '3. 每個弱點對應的正確觀念、記憶方式與複習優先順序。\n' +
+      '4. 一份可執行的 7 天複習計畫，每天列出主題與練習方式。\n' +
+      '5. 最後整理成「先讀什麼、再練什麼、如何驗收」的行動清單。\n\n' +
+      '若題庫詳解可能與現行法規衝突，請明確標示「需要查證」，不要自行補造法條或來源。';
+  }
+  function renderExamResult(results) {
+    const score = results.filter(function (result) { return result.correct; }).length;
+    const stats = categoryExamStats(results);
+    byId('exam-score').textContent = score + '／' + results.length + ' 分';
+    byId('exam-result-detail').innerHTML = '<p>答對 ' + score + ' 題；答錯或未作答 ' + (results.length - score) + ' 題。</p><ul class="exam-category-summary">' + stats.map(function (item) { return '<li><strong>' + escapeHtml(item.category) + '</strong><br>' + item.correct + '／' + item.total + ' 題（' + item.rate + '%）</li>'; }).join('') + '</ul>';
+    byId('exam-ai-prompt').value = buildExamPrompt(results, score, stats);
+    byId('exam-result').hidden = false;
+  }
+  function submitExam() {
+    if (!examSession.length || examSubmitted) return;
+    const unanswered = examSession.length - Object.keys(examAnswers).length;
+    if (unanswered > 0 && !window.confirm('尚有 ' + unanswered + ' 題未作答，未作答將以 0 分計算。確定交卷？')) return;
+    const results = examResults();
+    results.forEach(function (result) {
+      if (result.correct) return;
+      const id = result.question.id;
+      const previous = wrong[id] || { mistakes: 0 };
+      wrong[id] = { mistakes: Number(previous.mistakes || 0) + 1, lastWrongAt: new Date().toISOString(), lastSelected: result.selected };
+    });
+    examSubmitted = true;
+    saveAndRefresh();
+    renderExam();
+    renderExamResult(results);
+    window.scrollTo({ top: byId('exam-result').offsetTop - 20, behavior: 'smooth' });
+  }
+  function copyExamPrompt() {
+    const area = byId('exam-ai-prompt');
+    const fallback = function () { area.focus(); area.select(); document.execCommand('copy'); showToast('已複製 AI 分析提示詞。'); };
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(area.value).then(function () { showToast('已複製 AI 分析提示詞。'); }).catch(fallback);
+    } else fallback();
+  }
   function displayTime(value) { return value ? new Intl.DateTimeFormat('zh-TW', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) : '未記錄'; }
   function renderWrong() {
     const entries = Object.keys(wrong).map(function (id) { return { question: getQuestion(id), record: wrong[id] }; }).filter(function (item) { return item.question; }).sort(function (left, right) { return Number(right.record.mistakes || 0) - Number(left.record.mistakes || 0); });
@@ -2533,6 +2732,10 @@ const QUESTION_BANK = [{"id":"10","category":"A｜職業安全衛生法","questi
   document.querySelectorAll('[data-mode-button]').forEach(function (button) { button.addEventListener('click', function () { setMode(button.dataset.modeButton); }); });
   byId('print-bank-button').addEventListener('click', printBank);
   byId('start-practice').addEventListener('click', startPractice);
+  byId('start-all-exam').addEventListener('click', function () { startExam('all'); });
+  byId('start-wrong-exam').addEventListener('click', function () { startExam('wrong'); });
+  byId('submit-exam').addEventListener('click', submitExam);
+  byId('copy-exam-prompt').addEventListener('click', copyExamPrompt);
   byId('retry-all-wrong').addEventListener('click', function () { startWrongPractice(); });
   byId('undo-wrong-remove').addEventListener('click', undoWrongRemoval);
   byId('clear-wrong').addEventListener('click', function () { if (Object.keys(wrong).length && window.confirm('確定清除所有錯題紀錄？')) { wrong = {}; lastRemovedWrong = null; saveAndRefresh(); renderWrong(); showToast('已清除全部錯題紀錄。'); } });
@@ -2543,7 +2746,7 @@ const QUESTION_BANK = [{"id":"10","category":"A｜職業安全衛生法","questi
   byId('import-data-button').addEventListener('click', function () { byId('import-data').click(); });
   byId('import-data').addEventListener('change', function () { importData(this.files && this.files[0]); this.value = ''; });
   const requestedMode = new URLSearchParams(window.location.search).get('mode');
-  setMode(['practice', 'wrong', 'manage', 'print'].includes(requestedMode) ? requestedMode : 'print');
+  setMode(['practice', 'exam', 'wrong', 'manage', 'print'].includes(requestedMode) ? requestedMode : 'print');
 }());
 </script>
 </body>
