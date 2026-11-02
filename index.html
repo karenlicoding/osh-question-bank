@@ -87,6 +87,20 @@ body[data-mode="practice"] .app-toolbar, body[data-mode="exam"] .app-toolbar, bo
 .practice-feedback.correct { border-left-color: #2e8b57; background: #eff9f2; }
 .practice-feedback.wrong { border-left-color: #bf3535; background: #fff2f2; }
 .practice-feedback .answer-key { color: #bc1717; font-weight: 700; }
+.rich-detail { margin-top: 6px; }
+.rich-detail p, .rich-detail div { margin: 0 0 6px; }
+.rich-detail a, .rich-editor a { color: #075fa8; text-decoration: underline; }
+.detail-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+.detail-actions button, .rich-toolbar button, .rich-editor-actions button { border: 1px solid #527c9b; border-radius: 5px; padding: 5px 9px; background: #fff; color: #24506f; font: inherit; cursor: pointer; }
+.rich-editor-wrap { margin-top: 12px; padding: 12px; border: 1px solid #91a9ba; border-radius: 7px; background: #fff; }
+.rich-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 8px; }
+.rich-toolbar button { min-width: 38px; }
+.rich-toolbar .toolbar-color { display: inline-flex; align-items: center; gap: 5px; padding: 3px 7px; border: 1px solid #9db0be; border-radius: 5px; color: #304f64; font-size: 12px; }
+.rich-toolbar input[type="color"] { width: 30px; height: 26px; padding: 0; border: 0; background: transparent; cursor: pointer; }
+.rich-editor { min-height: 150px; max-height: 420px; overflow: auto; padding: 10px; border: 1px solid #9eadb8; border-radius: 5px; background: #fff; line-height: 1.65; }
+.rich-editor:focus { border-color: #1f6ca6; outline: 2px solid rgba(31, 108, 166, .15); }
+.rich-editor-actions { display: flex; justify-content: flex-end; gap: 7px; margin-top: 9px; }
+.rich-editor-actions button.primary { background: #1f5f9f; color: #fff; }
 .exam-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
 .exam-choice { padding: 14px; border: 1px solid #ccd8e1; border-radius: 8px; background: #f8fbfd; }
 .exam-choice strong { display: block; margin-bottom: 4px; color: #173f5e; font-size: 16px; }
@@ -2318,6 +2332,8 @@ const QUESTION_BANK = [{"id":"10","category":"A｜職業安全衛生法","questi
   let examAnswers = {};
   let examTitle = '';
   let examSubmitted = false;
+  let detailEditorContext = null;
+  let detailSelectionRange = null;
 
   function byId(id) { return document.getElementById(id); }
   function readStorage(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch (error) { return fallback; } }
@@ -2326,7 +2342,69 @@ const QUESTION_BANK = [{"id":"10","category":"A｜職業安全衛生法","questi
     const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
     return String(value == null ? '' : value).replace(/[&<>"']/g, function (char) { return map[char]; });
   }
-  function lineBreaks(value) { return escapeHtml(value).split(String.fromCharCode(10)).join('<br>'); }
+  function safeHttpUrl(value) {
+    try {
+      const url = new URL(String(value || '').trim());
+      return url.protocol === 'http:' || url.protocol === 'https:' ? url.href : '';
+    } catch (error) { return ''; }
+  }
+  function linkifyText(value) {
+    const container = document.createElement('div');
+    String(value == null ? '' : value).split(String.fromCharCode(10)).forEach(function (line, lineIndex) {
+      if (lineIndex > 0) container.appendChild(document.createElement('br'));
+      const parts = line.split(/(https?:\/\/[^\s]+)/g);
+      parts.forEach(function (part) {
+        if (!/^https?:\/\//i.test(part)) { container.appendChild(document.createTextNode(part)); return; }
+        const urlText = part.replace(/[),.;，。！？]+$/g, '');
+        const suffix = part.slice(urlText.length);
+        const href = safeHttpUrl(urlText);
+        if (href) {
+          const anchor = document.createElement('a');
+          anchor.href = href; anchor.target = '_blank'; anchor.rel = 'noopener noreferrer'; anchor.textContent = urlText;
+          container.appendChild(anchor);
+        } else container.appendChild(document.createTextNode(urlText));
+        if (suffix) container.appendChild(document.createTextNode(suffix));
+      });
+    });
+    return container.innerHTML;
+  }
+  function sanitizeRichHtml(value) {
+    const template = document.createElement('template');
+    template.innerHTML = String(value == null ? '' : value);
+    const allowed = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'A', 'SPAN', 'FONT', 'BR', 'P', 'DIV', 'UL', 'OL', 'LI']);
+    const blocked = new Set(['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED', 'SVG', 'MATH', 'FORM', 'INPUT', 'BUTTON']);
+    Array.from(template.content.querySelectorAll('*')).forEach(function (element) {
+      const tag = element.tagName;
+      if (!allowed.has(tag)) {
+        if (blocked.has(tag)) element.remove();
+        else element.replaceWith.apply(element, Array.from(element.childNodes));
+        return;
+      }
+      const href = tag === 'A' ? element.getAttribute('href') : '';
+      const color = tag === 'FONT' ? element.getAttribute('color') : (tag === 'SPAN' ? element.style.color : '');
+      Array.from(element.attributes).forEach(function (attribute) { element.removeAttribute(attribute.name); });
+      if (tag === 'A') {
+        const safeHref = safeHttpUrl(href);
+        if (!safeHref) { element.replaceWith.apply(element, Array.from(element.childNodes)); return; }
+        element.setAttribute('href', safeHref); element.setAttribute('target', '_blank'); element.setAttribute('rel', 'noopener noreferrer');
+      }
+      if ((tag === 'SPAN' || tag === 'FONT') && color && window.CSS && window.CSS.supports && window.CSS.supports('color', color)) {
+        if (tag === 'SPAN') element.style.color = color;
+        else element.setAttribute('color', color);
+      }
+    });
+    return template.innerHTML;
+  }
+  function renderDetail(question) {
+    if (question.detailHtml) return sanitizeRichHtml(question.detailHtml);
+    return linkifyText(question.detail || '未提供詳解');
+  }
+  function detailPlainText(question) {
+    if (!question.detailHtml) return String(question.detail || '');
+    const container = document.createElement('div');
+    container.innerHTML = sanitizeRichHtml(question.detailHtml);
+    return (container.innerText || container.textContent || '').trim();
+  }
   function allQuestions() {
     return QUESTION_BANK.map(function (question) {
       const patch = custom[question.id];
@@ -2344,6 +2422,90 @@ const QUESTION_BANK = [{"id":"10","category":"A｜職業安全衛生法","questi
     toast.textContent = message;
     document.body.appendChild(toast);
     window.setTimeout(function () { toast.remove(); }, 2200);
+  }
+  function detailEditorActive(source, index) { return detailEditorContext && detailEditorContext.source === source && detailEditorContext.index === index; }
+  function detailEditorMarkup(question, source, index) {
+    if (!detailEditorActive(source, index)) return '';
+    return '<div class="rich-editor-wrap"><div class="rich-toolbar" role="toolbar" aria-label="詳解文字格式"><button type="button" data-detail-command="bold"><strong>粗體</strong></button><button type="button" data-detail-command="underline"><u>底線</u></button><button type="button" data-detail-command="italic"><em>斜體</em></button><label class="toolbar-color">文字顏色<input type="color" id="detail-color-picker" value="#c40000" aria-label="選擇文字顏色"></label><button type="button" id="detail-create-link">加入超連結</button><button type="button" data-detail-command="unlink">移除連結</button></div><div id="active-detail-editor" class="rich-editor" contenteditable="true" role="textbox" aria-multiline="true">' + renderDetail(question) + '</div><div class="rich-editor-actions"><button type="button" id="cancel-detail-edit">取消</button><button type="button" class="primary" id="save-detail-edit">儲存詳解</button></div></div>';
+  }
+  function detailActionsMarkup(question, source, index) {
+    const openButton = detailEditorActive(source, index) ? '' : '<div class="detail-actions"><button type="button" data-open-detail-source="' + source + '" data-open-detail-index="' + index + '">直接編輯詳解</button></div>';
+    return openButton + detailEditorMarkup(question, source, index);
+  }
+  function rerenderDetailSource(source) { if (source === 'exam') renderExam(); else renderPractice(); }
+  function rememberDetailSelection() {
+    const editor = byId('active-detail-editor');
+    const selection = window.getSelection();
+    if (!editor || !selection || !selection.rangeCount) return;
+    const range = selection.getRangeAt(0);
+    if (editor.contains(range.commonAncestorContainer)) detailSelectionRange = range.cloneRange();
+  }
+  function restoreDetailSelection() {
+    const editor = byId('active-detail-editor');
+    if (!editor) return false;
+    editor.focus();
+    if (!detailSelectionRange || !editor.contains(detailSelectionRange.commonAncestorContainer)) return false;
+    const selection = window.getSelection();
+    selection.removeAllRanges(); selection.addRange(detailSelectionRange);
+    return true;
+  }
+  function applyDetailCommand(command, value) {
+    restoreDetailSelection();
+    document.execCommand(command, false, value || null);
+    rememberDetailSelection();
+  }
+  function createDetailLink() {
+    restoreDetailSelection();
+    const selection = window.getSelection();
+    if (!selection || !selection.rangeCount || selection.isCollapsed) { showToast('請先在詳解中選取要加連結的文字。'); return; }
+    let value = window.prompt('請輸入超連結網址（例如：https://example.com）');
+    if (!value) return;
+    value = value.trim();
+    if (!/^https?:\/\//i.test(value)) value = 'https://' + value;
+    const href = safeHttpUrl(value);
+    if (!href) { showToast('只允許 http 或 https 網址。'); return; }
+    restoreDetailSelection();
+    document.execCommand('createLink', false, href);
+    rememberDetailSelection();
+  }
+  function saveDetailEdit() {
+    if (!detailEditorContext) return;
+    const editor = byId('active-detail-editor');
+    const source = detailEditorContext.source;
+    const index = detailEditorContext.index;
+    const question = source === 'exam' ? examSession[index] : session[index];
+    if (!editor || !question) return;
+    const detailHtml = sanitizeRichHtml(editor.innerHTML);
+    const holder = document.createElement('div'); holder.innerHTML = detailHtml;
+    const detail = (holder.innerText || holder.textContent || '').trim();
+    if (!detail) { showToast('詳解內容不可為空白。'); return; }
+    custom[question.id] = Object.assign({}, custom[question.id] || {}, { detail: detail, detailHtml: detailHtml });
+    session = session.map(function (item) { return item.id === question.id ? Object.assign({}, item, { detail: detail, detailHtml: detailHtml }) : item; });
+    examSession = examSession.map(function (item) { return item.id === question.id ? Object.assign({}, item, { detail: detail, detailHtml: detailHtml }) : item; });
+    detailEditorContext = null; detailSelectionRange = null;
+    saveAndRefresh();
+    rerenderDetailSource(source);
+    showToast('詳解已儲存，下次練習會沿用。');
+  }
+  function bindRichDetailEditors() {
+    document.querySelectorAll('[data-open-detail-source]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        detailEditorContext = { source: button.dataset.openDetailSource, index: Number(button.dataset.openDetailIndex) };
+        detailSelectionRange = null;
+        rerenderDetailSource(detailEditorContext.source);
+        window.setTimeout(function () { const editor = byId('active-detail-editor'); if (editor) editor.focus(); }, 0);
+      });
+    });
+    const editor = byId('active-detail-editor');
+    if (!editor) return;
+    ['keyup', 'mouseup', 'input'].forEach(function (eventName) { editor.addEventListener(eventName, rememberDetailSelection); });
+    document.querySelectorAll('[data-detail-command]').forEach(function (button) { button.addEventListener('mousedown', function (event) { event.preventDefault(); applyDetailCommand(button.dataset.detailCommand); }); });
+    const colorPicker = byId('detail-color-picker');
+    colorPicker.addEventListener('mousedown', rememberDetailSelection);
+    colorPicker.addEventListener('change', function () { applyDetailCommand('foreColor', colorPicker.value); });
+    byId('detail-create-link').addEventListener('mousedown', function (event) { event.preventDefault(); createDetailLink(); });
+    byId('save-detail-edit').addEventListener('click', saveDetailEdit);
+    byId('cancel-detail-edit').addEventListener('click', function () { const source = detailEditorContext.source; detailEditorContext = null; detailSelectionRange = null; rerenderDetailSource(source); });
   }
   function shuffle(items) {
     const result = items.slice();
@@ -2455,6 +2617,7 @@ const QUESTION_BANK = [{"id":"10","category":"A｜職業安全衛生法","questi
     session = shuffle(picked);
     sessionAnswers = {};
     sessionKind = 'random';
+    detailEditorContext = null; detailSelectionRange = null;
     const groupSummary = ['A', 'B'].filter(function (prefix) { return groupTotals[prefix] > 0; }).map(function (prefix) { return prefix + ' 類 ' + groupTotals[prefix] + ' 題'; }).join('＋');
     sessionTitle = '自訂隨機練習｜' + groupSummary;
     renderPractice();
@@ -2464,6 +2627,7 @@ const QUESTION_BANK = [{"id":"10","category":"A｜職業安全衛生法","questi
     session = shuffle(selectedIds.map(getQuestion).filter(Boolean));
     sessionAnswers = {};
     sessionKind = 'wrong';
+    detailEditorContext = null; detailSelectionRange = null;
     sessionTitle = '錯題重點複習';
     if (session.length === 0) { showToast('目前沒有可重練的錯題。'); return; }
     setMode('practice');
@@ -2490,12 +2654,13 @@ const QUESTION_BANK = [{"id":"10","category":"A｜職業安全衛生法","questi
       if (hasAnswered) {
         const isCorrect = selected === question.answer;
         const archivedAfterCorrect = isCorrect && sessionKind === 'wrong' && Boolean(archive[question.id]);
-        feedback = '<div class="practice-feedback ' + (isCorrect ? 'correct' : 'wrong') + '"><strong>' + (archivedAfterCorrect ? '答對了，已移至封存區。' : (isCorrect ? '答對了。' : '答錯了，保留在錯題複習。')) + '</strong><div class="answer-key">正確答案：' + LETTERS[question.answer - 1] + ' ' + escapeHtml(question.options[question.answer - 1]) + '</div><div><strong>詳解：</strong>' + lineBreaks(question.detail || '未提供詳解') + '</div>' + (question.reference ? '<div class="small-note">官方來源：' + lineBreaks(question.reference) + '</div>' : '') + '</div>';
+        feedback = '<div class="practice-feedback ' + (isCorrect ? 'correct' : 'wrong') + '"><strong>' + (archivedAfterCorrect ? '答對了，已移至封存區。' : (isCorrect ? '答對了。' : '答錯了，保留在錯題複習。')) + '</strong><div class="answer-key">正確答案：' + LETTERS[question.answer - 1] + ' ' + escapeHtml(question.options[question.answer - 1]) + '</div><div><strong>詳解：</strong><div class="rich-detail">' + renderDetail(question) + '</div></div>' + (question.reference ? '<div class="small-note">官方來源：' + linkifyText(question.reference) + '</div>' : '') + detailActionsMarkup(question, 'practice', index) + '</div>';
       }
       const submit = hasAnswered ? '' : '<button type="button" class="primary" data-answer-index="' + index + '">送出答案</button>';
       return '<article class="practice-question"><div class="practice-meta">第 ' + (index + 1) + ' 題｜' + escapeHtml(question.category) + '｜原題號 ' + escapeHtml(question.id) + mistakeLabel + '</div><h2>' + escapeHtml(question.question) + '</h2><div>' + options + '</div>' + submit + feedback + '</article>';
     }).join('');
     document.querySelectorAll('[data-answer-index]').forEach(function (button) { button.addEventListener('click', function () { submitAnswer(Number(button.dataset.answerIndex)); }); });
+    bindRichDetailEditors();
   }
   function recordWrongAnswer(question, selected) {
     const previous = wrong[question.id] || archive[question.id] || { mistakes: 0 };
@@ -2560,6 +2725,7 @@ const QUESTION_BANK = [{"id":"10","category":"A｜職業安全衛生法","questi
     }
     examAnswers = {};
     examSubmitted = false;
+    detailEditorContext = null; detailSelectionRange = null;
     setMode('exam');
     renderExam();
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2597,7 +2763,7 @@ const QUESTION_BANK = [{"id":"10","category":"A｜職業安全衛生法","questi
       if (examSubmitted) {
         const isCorrect = selected === Number(question.answer);
         const selectedText = selected == null ? '未作答' : LETTERS[selected - 1] + ' ' + question.options[selected - 1];
-        feedback = '<div class="practice-feedback ' + (isCorrect ? 'correct' : 'wrong') + '"><strong>' + (isCorrect ? '答對，獲得 1 分。' : '未得分。你的答案：' + escapeHtml(selectedText)) + '</strong><div class="answer-key">正確答案：' + LETTERS[question.answer - 1] + ' ' + escapeHtml(question.options[question.answer - 1]) + '</div>' + (isCorrect ? '' : '<div><strong>詳解：</strong>' + lineBreaks(question.detail || '未提供詳解') + '</div>') + '</div>';
+        feedback = '<div class="practice-feedback ' + (isCorrect ? 'correct' : 'wrong') + '"><strong>' + (isCorrect ? '答對，獲得 1 分。' : '未得分。你的答案：' + escapeHtml(selectedText)) + '</strong><div class="answer-key">正確答案：' + LETTERS[question.answer - 1] + ' ' + escapeHtml(question.options[question.answer - 1]) + '</div><div><strong>詳解：</strong><div class="rich-detail">' + renderDetail(question) + '</div></div>' + detailActionsMarkup(question, 'exam', index) + '</div>';
       }
       return '<article class="practice-question exam-question' + (selected == null && examSubmitted ? ' unanswered' : '') + '"><div class="practice-meta">第 ' + (index + 1) + ' 題｜' + escapeHtml(question.category) + '｜原題號 ' + escapeHtml(question.id) + '</div><h2>' + escapeHtml(question.question) + '</h2><div>' + options + '</div>' + feedback + '</article>';
     }).join('');
@@ -2611,6 +2777,7 @@ const QUESTION_BANK = [{"id":"10","category":"A｜職業安全衛生法","questi
         });
       });
     }
+    bindRichDetailEditors();
   }
   function categoryExamStats(results) {
     const stats = {};
@@ -2641,7 +2808,7 @@ const QUESTION_BANK = [{"id":"10","category":"A｜職業安全衛生法","questi
       const question = item.question;
       const selectedLabels = Array.from(new Set(item.selected.map(function (value) { return value == null ? '未作答' : LETTERS[value - 1] + ' ' + question.options[value - 1]; })));
       const options = question.options.map(function (option, optionIndex) { return LETTERS[optionIndex] + ' ' + option; }).join('；');
-      return (index + 1) + '. [' + question.category + '｜原題號 ' + question.id + '] ' + question.question + '\n   選項：' + options + '\n   我的作答：' + selectedLabels.join('、') + '\n   正確答案：' + LETTERS[question.answer - 1] + ' ' + question.options[question.answer - 1] + '\n   本次出現 ' + item.total + ' 次、答錯 ' + item.wrong + ' 次\n   題庫詳解：' + (question.detail || '未提供');
+      return (index + 1) + '. [' + question.category + '｜原題號 ' + question.id + '] ' + question.question + '\n   選項：' + options + '\n   我的作答：' + selectedLabels.join('、') + '\n   正確答案：' + LETTERS[question.answer - 1] + ' ' + question.options[question.answer - 1] + '\n   本次出現 ' + item.total + ' 次、答錯 ' + item.wrong + ' 次\n   題庫詳解：' + (detailPlainText(question) || '未提供');
     }).join('\n\n') : '本次沒有錯題。';
     return '你是一位熟悉臺灣職業安全衛生法規與專業知識的考試教練。請根據以下模擬考結果，使用繁體中文分析我的學習狀況。\n\n' +
       '【模擬考資料】\n' +
@@ -2697,7 +2864,7 @@ const QUESTION_BANK = [{"id":"10","category":"A｜職業安全衛生法","questi
     if (entries.length === 0) { byId('wrong-list').innerHTML = '<div class="panel-card">尚無錯題紀錄。完成練習後，答錯的題目會自動出現在此處。</div>'; return; }
     byId('wrong-list').innerHTML = entries.map(function (item) {
       const question = item.question; const record = item.record;
-      return '<article class="wrong-item"><div class="practice-meta">' + escapeHtml(question.category) + '｜原題號 ' + escapeHtml(question.id) + '｜答錯 ' + Number(record.mistakes || 0) + ' 次｜最近：' + escapeHtml(displayTime(record.lastWrongAt)) + '</div><h3>' + escapeHtml(question.question) + '</h3><p><strong>重點：</strong>' + lineBreaks(question.detail || '未提供詳解') + '</p><div class="wrong-actions"><button type="button" data-retry-one="' + escapeHtml(question.id) + '">重練此題</button><button type="button" data-edit-one="' + escapeHtml(question.id) + '">開啟編修</button><button type="button" class="danger" data-remove-wrong="' + escapeHtml(question.id) + '">移除紀錄</button></div></article>';
+      return '<article class="wrong-item"><div class="practice-meta">' + escapeHtml(question.category) + '｜原題號 ' + escapeHtml(question.id) + '｜答錯 ' + Number(record.mistakes || 0) + ' 次｜最近：' + escapeHtml(displayTime(record.lastWrongAt)) + '</div><h3>' + escapeHtml(question.question) + '</h3><div><strong>重點：</strong><div class="rich-detail">' + renderDetail(question) + '</div></div><div class="wrong-actions"><button type="button" data-retry-one="' + escapeHtml(question.id) + '">重練此題</button><button type="button" data-edit-one="' + escapeHtml(question.id) + '">開啟編修</button><button type="button" class="danger" data-remove-wrong="' + escapeHtml(question.id) + '">移除紀錄</button></div></article>';
     }).join('');
     document.querySelectorAll('[data-retry-one]').forEach(function (button) { button.addEventListener('click', function () { startWrongPractice([button.dataset.retryOne]); }); });
     document.querySelectorAll('[data-edit-one]').forEach(function (button) { button.addEventListener('click', function () { managerSelectedId = button.dataset.editOne; setMode('manage'); }); });
@@ -2710,7 +2877,7 @@ const QUESTION_BANK = [{"id":"10","category":"A｜職業安全衛生法","questi
     if (entries.length === 0) { byId('archive-list').innerHTML = '<div class="panel-card">封存區目前沒有題目。在錯題複習中答對後，題目會自動移到這裡。</div>'; return; }
     byId('archive-list').innerHTML = entries.map(function (item) {
       const question = item.question; const record = item.record;
-      return '<article class="wrong-item"><div class="practice-meta">' + escapeHtml(question.category) + '｜原題號 ' + escapeHtml(question.id) + '｜封存前累積答錯 ' + Number(record.mistakes || 0) + ' 次｜封存：' + escapeHtml(displayTime(record.archivedAt)) + '</div><h3>' + escapeHtml(question.question) + '</h3><p><strong>重點：</strong>' + lineBreaks(question.detail || '未提供詳解') + '</p><div class="wrong-actions"><button type="button" data-restore-archive="' + escapeHtml(question.id) + '">拉回錯題複習區</button><button type="button" class="danger" data-delete-archive="' + escapeHtml(question.id) + '">刪除封存紀錄</button></div></article>';
+      return '<article class="wrong-item"><div class="practice-meta">' + escapeHtml(question.category) + '｜原題號 ' + escapeHtml(question.id) + '｜封存前累積答錯 ' + Number(record.mistakes || 0) + ' 次｜封存：' + escapeHtml(displayTime(record.archivedAt)) + '</div><h3>' + escapeHtml(question.question) + '</h3><div><strong>重點：</strong><div class="rich-detail">' + renderDetail(question) + '</div></div><div class="wrong-actions"><button type="button" data-restore-archive="' + escapeHtml(question.id) + '">拉回錯題複習區</button><button type="button" class="danger" data-delete-archive="' + escapeHtml(question.id) + '">刪除封存紀錄</button></div></article>';
     }).join('');
     document.querySelectorAll('[data-restore-archive]').forEach(function (button) { button.addEventListener('click', function () { restoreArchivedQuestion(button.dataset.restoreArchive); }); });
     document.querySelectorAll('[data-delete-archive]').forEach(function (button) { button.addEventListener('click', function () { deleteArchivedQuestion(button.dataset.deleteArchive); }); });
@@ -2755,7 +2922,7 @@ const QUESTION_BANK = [{"id":"10","category":"A｜職業安全衛生法","questi
     const categoryOptions = allCategories().map(function (category) { return '<option value="' + escapeHtml(category) + '"' + (category === question.category ? ' selected' : '') + '>' + escapeHtml(category) + '</option>'; }).join('');
     const answerOptions = LETTERS.map(function (letter, index) { const value = index + 1; return '<option value="' + value + '"' + (value === Number(question.answer) ? ' selected' : '') + '>' + letter + ' 選項 ' + value + '</option>'; }).join('');
     const optionInputs = question.options.map(function (option, index) { return '<label>選項 ' + (index + 1) + '<input id="edit-option-' + (index + 1) + '" value="' + escapeHtml(option) + '"></label>'; }).join('');
-    area.innerHTML = '<h2>編修原題號 ' + escapeHtml(question.id) + '</h2><p class="small-note">目前狀態：' + (custom[question.id] ? '已套用本機自訂編修' : '官方查核主檔') + '</p><div class="editor-grid"><label>索引分類<select id="edit-category">' + categoryOptions + '</select></label><label>題目<textarea id="edit-question">' + escapeHtml(question.question) + '</textarea></label><div class="editor-options">' + optionInputs + '</div><label>正確答案<select id="edit-answer">' + answerOptions + '</select></label><label>詳解<textarea id="edit-detail">' + escapeHtml(question.detail || '') + '</textarea></label></div><div class="editor-actions"><button type="button" class="primary" id="save-question">儲存本機編修</button><button type="button" id="restore-question">還原此題為官方主檔</button></div>';
+    area.innerHTML = '<h2>編修原題號 ' + escapeHtml(question.id) + '</h2><p class="small-note">目前狀態：' + (custom[question.id] ? '已套用本機自訂編修' : '官方查核主檔') + '</p><div class="editor-grid"><label>索引分類<select id="edit-category">' + categoryOptions + '</select></label><label>題目<textarea id="edit-question">' + escapeHtml(question.question) + '</textarea></label><div class="editor-options">' + optionInputs + '</div><label>正確答案<select id="edit-answer">' + answerOptions + '</select></label><label>詳解（在作答後可使用富文字工具調整格式）<textarea id="edit-detail">' + escapeHtml(detailPlainText(question)) + '</textarea></label></div><div class="editor-actions"><button type="button" class="primary" id="save-question">儲存本機編修</button><button type="button" id="restore-question">還原此題為官方主檔</button></div>';
     byId('save-question').addEventListener('click', saveQuestionEdit);
     byId('restore-question').addEventListener('click', restoreQuestionEdit);
   }
